@@ -1,0 +1,855 @@
+package ossframework; 
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.sql.Driver;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+import javax.xml.bind.DatatypeConverter;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.poi.EncryptedDocumentException;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.openqa.selenium.Alert;
+import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.Keys;
+import org.openqa.selenium.OutputType;
+import org.openqa.selenium.TakesScreenshot;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.ie.InternetExplorerDriver;
+import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.remote.CapabilityType;
+import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.Select;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import org.testng.annotations.Test;
+
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+
+public class PerfMEEBSPROD {
+                
+                private final static String Filename ="C:\\Performance\\PerfFiles\\PerformanceCheckPRODMEEBSBooking.xlsx";
+                
+                @Test
+                public static void main(String[] args)
+                                                throws EncryptedDocumentException, InvalidFormatException, IOException, InterruptedException {
+                                WebDriver driver=login();
+                                FetchCPR_Excel(driver);
+                                
+                                driver.close();
+                                driver.quit();
+
+                }
+              
+                public static void CheckAlert(WebDriver driver) {
+
+                                try {
+                                                Alert alert = driver.switchTo().alert();
+                                                alert.accept();
+                                                String alertMessage = driver.switchTo().alert().getText();
+                                                System.out.println(alertMessage);
+                                } catch (Exception e) {
+                                                System.out.println("No Alert");
+                                }
+                                System.out.println("Invalid customer");
+                                HandleWindow(driver);
+                                String sLogData;
+                                // sLogData=i+")Invalid customer "+sCPR;
+
+                                // BW.newLine();//To write next string on new line.
+                                // BW.write(sLogData); //Writing In To File.
+                                // sLogData="";
+
+                }
+                
+                public static String getsheetName(){
+                                
+                                Date datePerf = new Date();
+                                DateFormat DatePerfSimp = new SimpleDateFormat("MMMdd");
+                    String stringDatePerf = DatePerfSimp.format(datePerf);
+                  //  System.out.println("PerfPortal "+stringDatePerf);
+                       String sDateTemp="PerfPortal "+stringDatePerf;
+                                
+                                return sDateTemp;
+                                
+                }
+
+                public static void writedata(int i,String sData) throws IOException{
+                                String SheetName=getsheetName();
+                                
+                                InputStream myxlsx = new FileInputStream("C:\\Performance\\PerfFiles\\PerformanceCheckPRODMEEBSBooking.xlsx");
+                                Workbook book = new XSSFWorkbook(myxlsx);
+                                Sheet sh = book.getSheet(SheetName);
+                                Row r = sh.getRow(i);
+                                int rowlastvalue =r.getLastCellNum();
+                                //System.out.println(rowlastvalue);
+                                book.close();
+                                myxlsx.close();
+                                
+                                
+                                FileInputStream input = new FileInputStream("C:\\Performance\\PerfFiles\\PerformanceCheckPRODMEEBSBooking.xlsx");
+                                XSSFWorkbook wb = new XSSFWorkbook(input);
+                                XSSFSheet sh1 = wb.getSheet(SheetName);
+                                XSSFRow row = sh1.getRow(i);
+                                FileOutputStream webdata = new FileOutputStream("C:\\Performance\\PerfFiles\\PerformanceCheckPRODMEEBSBooking.xlsx");
+                                row.createCell(rowlastvalue).setCellValue(sData);
+
+
+                                wb.write(webdata);
+                                webdata.close();
+                                wb.close();
+                                input.close();
+                                
+                                
+                                
+                }
+
+                public static void Capturesnap(WebDriver driver, String sFilename) throws IOException {
+
+                                try {
+
+                                                File srcFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
+                                                FileUtils.copyFile(srcFile, new File("c:\\Performance\\SnapShotsPROD\\" + sFilename + ".jpeg"), true);
+                                                WriteNotepad("C:\\Performance\\Resultlog.txt","c:\\Performance\\SnapShotsPROD\\" + sFilename + ".jpeg");
+                                                
+                                } catch (Exception e) {
+                                                System.out.println("Not able to capture Image");
+
+                                }
+
+                }
+
+                public static void customerportal(WebDriver driver, String sCPR, int i) throws InterruptedException, IOException {
+                                
+                                try {
+
+                                                String ival = String.valueOf(i);                                     
+                                                // Clicking on SearchBox
+                                                driver.switchTo().defaultContent();
+                                                driver.switchTo().frame("topmargin");
+                                                Thread.sleep(1000);
+                                                driver.findElement(By.id("searchVal")).clear();
+
+                
+                                                WebElement wb = driver.findElement(By.id("searchVal"));
+                                                JavascriptExecutor jse = (JavascriptExecutor)driver;
+                                                jse.executeScript("arguments[0].value='"+sCPR+"';", wb);
+
+
+                                                driver.findElement(By.xpath("//input[@value='Retrieve']")).click();
+                                                
+                                                driver.switchTo().defaultContent();
+                                                driver.switchTo().frame("appcontent");
+                                                
+                                                List<WebElement> RadioButton = driver.findElements(By.id("kundelisteKUNDESTRID"));
+                                                
+                                                if(RadioButton.size()>0){
+                                                                driver.findElement(By.id("kundelisteKUNDESTRID")).click();                                                       
+                                                                driver.findElement(By.id("btnvalg")).click();
+                                                }
+                                                
+                                                driver.switchTo().defaultContent();
+                                               driver.switchTo().frame("appcontent");
+                                                new WebDriverWait(driver, 20).until(ExpectedConditions.presenceOfElementLocated(By.id("KO03ovrskr")));
+                                                
+                                                
+                                                List<WebElement> Meetingblock = driver.findElements(By.id("KO03ovrskr"));                                  
+                                                if(Meetingblock.size()>0){
+
+                                                                driver.findElement(By.id("KO03selmeeting1ID")).click();
+                                                                Thread.sleep(1000);
+                                                                driver.findElement(By.xpath("//a[contains(text(),'Book meeting')]")).click();
+                                                                
+                                                                // Start Timing *******************************************************************************************************************
+                                                                
+                                                                long startTime = System.currentTimeMillis();
+                                                                
+                                                                Date date = new Date();
+                                                                DateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                                                    String stringDate = sdf.format(date);
+                                                  //  System.out.println(stringDate+":"+System.currentTimeMillis());
+                                                    String sstartTime=stringDate+":"+System.currentTimeMillis();
+                                                    
+                                                    
+                                                                
+                                                                
+                                                                List<WebElement> BookMeetingPage1 = driver.findElements(By.xpath("//h3[contains(text(),'Book meeting 1/2')]"));                                      
+                                                                if(BookMeetingPage1.size()>0){
+                                                                                
+                                                                                if(!driver.findElement(By.id("ctl00_cphC1R1_WPManager_DbgGenericWebPart1_optNamedAdvisor")).isSelected()){
+                                                                                                driver.findElement(By.id("ctl00_cphC1R1_WPManager_DbgGenericWebPart1_optNamedAdvisor")).click();
+                                                                                }
+                                                                                                Thread.sleep(1000);
+
+                                                                                                String sBnumber="bb7614";
+                                                                                                WebElement UserID=driver.findElement(By.id("ctl00_cphC1R1_WPManager_DbgGenericWebPart1_txtNamedAdvisorName_TextBox1"));                
+                                                                                                JavaClick(driver,UserID);
+                                                                                    JavaSendkeys(driver,UserID,sBnumber);
+                                                                                    Thread.sleep(1000);
+                                                                                                WebElement AddButton =driver.findElement(By.id("ctl00_cphC1R1_WPManager_DbgGenericWebPart1_btnAddNamedAdv"));
+                                                                                                JavaClick(driver,AddButton);
+                                                                                                Thread.sleep(1000);
+                                                                                                
+                                                                                                new WebDriverWait(driver, 20).until(ExpectedConditions.presenceOfElementLocated(By.id("ctl00_cphC1R1_WPManager_DbgGenericWebPart1_txtSubject_TextBox1")));
+                                                                                                for(int Sub=0;Sub<=8;Sub++){
+                                                                                                WebElement sSubject = driver.findElement(By.id("ctl00_cphC1R1_WPManager_DbgGenericWebPart1_txtSubject_TextBox1"));
+                                                                                                
+                                                                                                
+                                                                                                
+                                                                                                //Date Format
+                                                                                                Date datePerf = new Date();                                                                                                                                                                                      
+                                                                                                DateFormat DatePerfSimp = new SimpleDateFormat("MMMdd hh:mm:ss");                                                                                       
+                                                                                    String stringDatePerf = DatePerfSimp.format(datePerf);
+                                                                                    //Entering Subject
+                                                                                    Thread.sleep(2000);
+                                                                                    JavaClick(driver,sSubject);
+                                                                                    JavaSendkeys(driver,sSubject,"TestMeeting"+stringDatePerf);
+                                                                                    //driver.findElement(By.id("ctl00_cphC1R1_WPManager_DbgGenericWebPart1_txtSubject_TextBox1")).click();
+                                                                                                //driver.findElement(By.id("ctl00_cphC1R1_WPManager_DbgGenericWebPart1_txtSubject_TextBox1")).sendKeys("TestMeeting"+stringDatePerf);
+                                                                                                Thread.sleep(1000);
+                                                                                                String Subject=driver.findElement(By.id("ctl00_cphC1R1_WPManager_DbgGenericWebPart1_txtSubject_TextBox1")).getText();
+                                                                                                if(Subject!=null ||Subject!=""){
+                                                                                                                break;
+                                                                                                }
+                                                                                                }
+                                                                                                
+                                                                                                //Selecting the Meeting Type
+                                                                                                for(int iMeetingtype=1;iMeetingtype<=4;iMeetingtype++){
+                                                                                                
+                                                                                                Thread.sleep(1000);
+                                                                                                driver.findElement(By.id("ctl00_cphC1R1_WPManager_DbgGenericWebPart1_cboMeetingType_ListControl")).click();
+                                                                                                Thread.sleep(1000);
+                                                                                                driver.findElement(By.xpath("//option[contains(text(),'Day-to-day Day-to-day')]")).click(); 
+                                                                                                new WebDriverWait(driver, 20).until(ExpectedConditions.presenceOfElementLocated(By.id("ctl00_cphC1R1_WPManager_DbgGenericWebPart1_cboLocation_ListControl")));
+                                                                                                
+                                                                                                Thread.sleep(2000);
+                                                                                                WebElement ele =driver.findElement(By.id("ctl00_cphC1R1_WPManager_DbgGenericWebPart1_cboMeetingType_ListControl"));
+                                                                                                Select sel =new Select(ele);
+                                                                                                WebElement option = sel.getFirstSelectedOption();
+                                                                                                String SelectedItem = option.getText();
+                                                                                                //System.out.println(SelectedItem );
+                                                                                                
+                                                                                                if(SelectedItem.equals("Day-to-day Day-to-day")){
+                                                                                                                break;
+                                                                                                }
+                                                                                                
+                                                                                                }
+
+                                                                                                
+                                                                                                
+
+                                                                                                
+                                                                                                
+                                                                                                
+                                                                                                
+                                                                                                 new WebDriverWait(driver, 20).until(ExpectedConditions.presenceOfElementLocated(By.id("ctl00_cphC1R1_WPManager_DbgGenericWebPart1_cboSource_ListControl")));
+//                                                                                            
+                                                                                                 
+                                                                                                //Source of Booking
+                                                                                                Thread.sleep(2000);
+                                                                                                for(int iSourceofBooking=1;iSourceofBooking<=4;iSourceofBooking++){
+                                                                                                driver.findElement(By.id("ctl00_cphC1R1_WPManager_DbgGenericWebPart1_cboSource_ListControl")).click();
+
+                                                                                     new WebDriverWait(driver, 20).until(ExpectedConditions.presenceOfElementLocated(By.xpath("//option[contains(text(),'Branch - customer initiated')]")));
+                                                                                     driver.findElement(By.xpath("//option[contains(text(),'Branch - customer initiated')]")).click();                                                                                       
+                                                                                                 new WebDriverWait(driver, 20).until(ExpectedConditions.presenceOfElementLocated(By.id("ctl00_cphC1R1_WPManager_DbgGenericWebPart1_chkSkipCalendar")));
+                                                                                                
+
+                                                                                                Thread.sleep(1000);
+                                                                                                WebElement ele =driver.findElement(By.id("ctl00_cphC1R1_WPManager_DbgGenericWebPart1_cboSource_ListControl"));
+                                                                                                                Select sel =new Select(ele);
+                                                                                                                WebElement option = sel.getFirstSelectedOption();
+                                                                                                                String SelectedItem = option.getText();
+                                                                                                                //System.out.println(SelectedItem );
+                                                                                                                
+                                                                                                                if(SelectedItem.equals("Branch - customer initiated")){
+                                                                                                                                break;
+                                                                                                                }
+                                                                                                                
+                                                                                                }
+                                                                                                
+                                                                                                 
+                                                                                                 
+                                                                                                 if(driver.findElement(By.id("ctl00_cphC1R1_WPManager_DbgGenericWebPart1_chkSkipCalendar")).isSelected()){
+                                                                                                                driver.findElement(By.id("ctl00_cphC1R1_WPManager_DbgGenericWebPart1_chkSkipCalendar")).click();
+                                                                                                }
+                                                                                                
+                                                                                                
+                                                                                    driver.findElement(By.id("ctl00_cphC1R1_WPManager_DbgGenericWebPart1_btnNext")).click();
+                                                                                    
+                                                                                                driver.switchTo().defaultContent();
+                                                                                               driver.switchTo().frame("appcontent");
+                                                                                    List<WebElement> BookMeetingPage2 = driver.findElements(By.xpath("//h3[contains(text(),'Booking meeting 2/2')]"));                                                
+                                                                                                if(BookMeetingPage2.size()>0){
+                                                                                                                
+                                                                                                                //Click on Book Button
+                                                                                                                driver.findElement(By.id("ctl00_cphC1R1_btnBook")).click();
+                                                                                                                
+                                                                                                                
+                                                                                                                Thread.sleep(3000);
+                                                                                                                driver.switchTo().defaultContent();
+                                                                                                               driver.switchTo().frame("appcontent");                                                                                                              
+                                                                                                                List<WebElement> OverideCheckbox = driver.findElements(By.id("ctl00_cphC1R1_chkBreachBusy"));                                   
+                                                                                                                if(OverideCheckbox.size()>0){                                                                                                   
+                                                                                                                                
+                                                                                                                                if(!driver.findElement(By.id("ctl00_cphC1R1_chkBreachBusy")).isSelected()){
+                                                                                                                                                
+                                                                                                                                                driver.findElement(By.id("ctl00_cphC1R1_chkBreachBusy")).click();
+                                                                                                                                }
+                                                                                                                }
+                                                                                                                                driver.switchTo().defaultContent();
+                                                                                                                               driver.switchTo().frame("appcontent");                                                                                                              
+                                                                                                                                List<WebElement> BookButton = driver.findElements(By.id("ctl00_cphC1R1_btnBook"));                                
+                                                                                                                                if(BookButton.size()>0){                                                                                                               
+                                                                                                                                                driver.findElement(By.id("ctl00_cphC1R1_btnBook")).click();     
+                                                                                                                                }
+                                                                                                                
+                                                                                                                
+                                                                                                                
+                                                                                                                driver.switchTo().defaultContent();
+                                                                                                               driver.switchTo().frame("appcontent");                                                                                                              
+                                                                                                                List<WebElement> BookMeetingPage3 = driver.findElements(By.xpath("//h3[contains(text(),'Meeting')]"));                                         
+                                                                                                                if(BookMeetingPage3.size()>0){
+                                                                                                                
+                                                                                                                driver.findElement(By.id("ctl00_cphC1R1_WPManager_DbgGenericWebPart1_btnSaveClose")).click();
+                                                                                                                
+                                                                                                                //End Time *****************************************************************************************************************************
+                                                                                                                long endTime = System.currentTimeMillis();
+                                                                                                                
+                                                                                                                Date date1 = new Date();
+                                                                                                                DateFormat sdf1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                                                                                                    String stringDate1 = sdf1.format(date1);
+                                                                                                    //System.out.println(stringDate1+":"+System.currentTimeMillis());
+                                                                                                    String sEndTime=stringDate1+":"+System.currentTimeMillis();
+
+                                                                                                                long totalTime = endTime - startTime;
+
+                                                                                                                String sConversionString = String.valueOf(totalTime);
+//                                                                                                            System.out.println(startTime);
+//                                                                                                            System.out.println(endTime);
+//                                                                                                            System.out.println(sEndTime);
+//                                                                                                            
+//                                                                                                            System.out.println("sConversionString " + sConversionString + " milliseconds");
+//                                                                                                            
+//                                                                                                            System.out.println("Meeting Booked Successfully");
+                                                                                                                //SendingDataToSchema(sCPR,CurrentDateFormat(),"Meeting Booked Successfully","     -     ");
+                                                                                                                SendingDataToSchema(sCPR,sstartTime,sEndTime,sConversionString,"Meeting Booked Successfully","     -     ");
+                                                                                                                
+                                                                                                                
+                                                                                                                }else{
+                                                                                                                                
+                                                                                                                                System.out.println("Meeting Booking Confirmation page -Failed to load");
+                                                                                                                                ErrorCheck(driver,"Meeting Booking Confirmation page -Failed to load",sCPR,sstartTime,CurrentDateTimeFormat());
+                                                                                                                }
+                                                                                                                
+                                                                                                }else{
+                                                                                                                
+                                                                                                                System.out.println("Book meeting 2/2 page - Failed to load");
+                                                                                                                ErrorCheck(driver,"Book meeting 2/2 page - Failed to load",sCPR,sstartTime,CurrentDateTimeFormat());
+                                                                                                }
+                                                                                
+                                                                }else{
+                                                                                System.out.println("Book meeting 1/2 page - Failed to load");
+                                                                                ErrorCheck(driver,"Book meeting 1/2 page - Failed to load",sCPR,sstartTime,CurrentDateTimeFormat());
+                                                                }              
+                                                }else{
+                                                                
+                                                                System.out.println("Customer meetings, cases, comments and messages Block - Failed to load");
+                                                                ErrorCheck(driver,"Customer meetings, cases, comments and messages Block - Failed to load",sCPR,CurrentDateTimeFormat(),CurrentDateTimeFormat());
+                                                
+                                                }
+                                                
+
+
+                                                
+                                                //Your request has timed out. Be aware that the operation might have finished any-way.                 
+                                                //A technical error has occurred. Please retry. 
+                                                
+                                
+
+                                }catch (Exception e) {
+                                                
+                                                
+                                                ErrorCheck(driver,"",sCPR,CurrentDateTimeFormat(),CurrentDateTimeFormat());
+
+
+                                                
+                                }
+                }
+                
+                public static void HandleWindow(WebDriver driver) {
+
+                                String MainWindow = driver.getWindowHandle();
+
+                                // To handle all new opened window.
+                                Set<String> s1 = driver.getWindowHandles();
+                                Iterator<String> i1 = s1.iterator();
+
+                                while (i1.hasNext()) {
+                                                String ChildWindow = i1.next();
+                                                if (!MainWindow.equalsIgnoreCase(ChildWindow)) {
+
+                                                                // Switching to Child window
+                                                                driver.switchTo().window(ChildWindow);
+
+                                                                // Closing the Child Window.
+                                                                driver.close();
+                                                }
+                                }
+                                // Switching to Parent window i.e Main Window.
+                                driver.switchTo().window(MainWindow);
+                }
+
+                public static void SendingDataToSchema(String sCPRNo,String sStartTime,String sBookedTime,String sElapseTime,String sStatus,String sErrorDescription) throws IOException{
+                                
+
+                                
+                                Integer intValue = null;
+                                try{
+                                intValue = Integer.valueOf(sElapseTime.trim());
+                                }catch(Exception e){
+                                                intValue=0;
+                                }
+                                
+                                OkHttpClient client = new OkHttpClient();
+
+                                MediaType mediaType = MediaType.parse("application/vnd.appd.events+json;v=2");
+                                RequestBody body = RequestBody.create(mediaType, "[\r\n{\r\n\r\n     \r\n      \"CPRNO\": \""+sCPRNo+"\",\"StartTime\": \""+sStartTime+"\",\"BookedTime\": \""+sBookedTime+"\",\"ElapseTime\": "+intValue+",\"Status\": \""+sStatus+"\",\"ErrorDescription\": \""+sErrorDescription+"\"\r\n      \r\n     }\r\n]");
+                                Request request = new Request.Builder()
+                                  .url("http://lb-events.danskenet.net:9080/events/publish/prod_meebs")
+                                  .post(body)
+                                  .addHeader("X-Events-API-AccountName", "customer1_e8a3e9b8-afa5-43c3-aa9c-461710224258")
+                                  .addHeader("X-Events-API-Key", "dc22bf6a-84df-42d0-9012-1e7746357a1b")
+                                  .addHeader("Content-Type", "application/vnd.appd.events+json;v=2")
+                                  .addHeader("Accept", "application/vnd.appd.events+json;v=2")
+                                  .addHeader("cache-control", "no-cache")
+                                  .addHeader("Postman-Token", "d45d00d8-647f-4f29-b4a3-58665e267d9f")
+                                  .build();
+
+                                Response response = client.newCall(request).execute();
+                                
+                                System.out.println(response);
+                   
+                }
+                
+                public static void FetchCPR_Excel(WebDriver driver) throws EncryptedDocumentException, InvalidFormatException, IOException, InterruptedException{
+                                try{
+                                FileInputStream fs = new FileInputStream("C:\\Performance\\PerfFiles\\PerformanceCheckPRODMEEBSBooking.xlsx");
+                                Workbook wb = WorkbookFactory.create(fs);
+                                String SheetName=getsheetName();
+                    Sheet sh = wb.getSheet(SheetName);
+                    int rowCount = sh.getLastRowNum()-sh.getFirstRowNum(); 
+                    for (int i = 1; i < rowCount+1; i++) {
+                        Row r = sh.getRow(i);                    
+                      //System.out.println(r.getCell(0).getStringCellValue());
+                      String sCPR=r.getCell(0).getStringCellValue();
+                      if(sCPR==null || sCPR ==""){
+                                  break;
+                      }
+                      
+                      customerportal(driver,sCPR,i);
+                      
+                    }
+                    }catch(Exception e){
+                                
+                    }
+
+                }
+
+                public static WebDriver login() throws InterruptedException, EncryptedDocumentException, InvalidFormatException, IOException{
+                                
+                                DesiredCapabilities capabilities = DesiredCapabilities.internetExplorer();
+                                capabilities.setCapability(CapabilityType.BROWSER_NAME, "IE");
+                                capabilities.setCapability(InternetExplorerDriver.INTRODUCE_FLAKINESS_BY_IGNORING_SECURITY_DOMAINS, true);
+                                capabilities.setCapability(InternetExplorerDriver.IE_ENSURE_CLEAN_SESSION, true);
+                                capabilities.setCapability("ignoreZoomSetting", true);
+                                capabilities.setCapability("ignoreProtectedModeSettings", true);
+                                capabilities.setCapability("requireWindowFocus", true);
+                                capabilities.setCapability("initialBrowserUrl", "http://portal.danskenet.net/");
+                                System.setProperty("webdriver.ie.driver", "C:\\EBANKING\\Files\\Drivers\\IEDriverServer.exe"); 
+                                WebDriver driver = new InternetExplorerDriver(capabilities);
+                                driver.manage().deleteAllCookies();
+//                            driver.get("http://portal.danskenet.net/");
+                                driver.manage().window().maximize(); 
+                                driver.manage().timeouts().implicitlyWait(1, TimeUnit.SECONDS);
+                                Thread.sleep(32000);
+                                
+                                String username=ReadExcel("GeneralInfo", "", 1, 0);
+                                String password=ReadExcel("GeneralInfo", "Encrpt", 1, 1);
+                                   
+                                driver.switchTo().defaultContent();
+                                driver.switchTo().frame("appcontent");
+                                
+                                WebDriverWait Usernamewait = new WebDriverWait(driver,120);
+                                Usernamewait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//input[@name='userid']")));
+                                // Login
+                                List<WebElement> list2 = driver.findElements(By.xpath("//input[@name='userid']"));
+                                if (list2.size() > 0) {
+                                                driver.findElement(By.xpath("//input[@name='userid']")).clear();
+                                                Thread.sleep(1000);                                       
+                                                driver.findElement(By.xpath("//input[@name='userid']")).sendKeys("bb7614");
+                                                Thread.sleep(1000);
+                                                driver.findElement(By.xpath("//input[@name='password']")).sendKeys("jan2019");
+                                                driver.findElement(By.xpath("//input[@value='Log on']")).click();
+                                                Thread.sleep(2000);
+
+                                                try {
+                                                                Alert alert = driver.switchTo().alert();
+                                                                alert.accept();
+                                                                driver.findElement(By.xpath("//input[@name='userid']")).clear();
+                                                                Thread.sleep(1000);
+                                                                driver.findElement(By.xpath("//input[@name='userid']")).sendKeys(username);
+                                                                Thread.sleep(1000);
+                                                                driver.findElement(By.xpath("//input[@name='password']")).clear();
+                                                                driver.findElement(By.xpath("//input[@name='password']")).sendKeys(password);
+                                                                Thread.sleep(1000);
+                                                                driver.findElement(By.xpath("//input[@value='Log on']")).click();
+
+                                                } catch (Exception e) {
+                                                                // Do nothing
+                                                }
+                                
+                                                driver.switchTo().defaultContent();
+                                                driver.switchTo().frame("appcontent");
+                                                List<WebElement> PasswordExpiry = driver.findElements(By.id("R1aovrskr"));
+                                                if (PasswordExpiry.size() > 0) {
+                                                                List<WebElement> No = driver.findElements(By.xpath("//input[@class='gsKnap65' and @value='No']"));
+                                                                if (No.size() > 0) {
+
+                                                                                driver.findElement(By.xpath("//input[@class='gsKnap65' and @value='No']")).click();
+                                                                }
+
+                                                }
+
+                                                SetBranch(driver);
+                                                
+                                                
+                                                for(int iBranchcount =1;iBranchcount<=5;iBranchcount++){
+                                                                driver.switchTo().defaultContent();
+                                                                driver.switchTo().frame("topmenus");
+                                                                
+                                                                String sRegNo= driver.findElement(By.xpath("//span[@class='regno-label']")).getText();
+                                                                System.out.println(sRegNo);
+                                                                if(!sRegNo.equals("4420")){
+                                                                                SetBranch(driver);
+                                                                                
+                                                                }else{
+                                                                                break;
+                                                                }
+                                                                
+                                                }
+                                                
+
+                                                
+                                } else {
+//do nothing
+                                }
+
+                                
+                                driver.switchTo().defaultContent();
+                                driver.switchTo().frame("topmenus");
+                                //driver.findElement(By.xpath("//span[@id='MenuT1ID']/span/a[@id='punktT1']")).click();
+                                
+                                
+                                Thread.sleep(1000);
+                                driver.switchTo().defaultContent();
+                                driver.switchTo().frame("topmenus");
+                                WebElement customerlink=driver.findElement(By.xpath("//span[@id='MenuT1ID']/span/a[@id='punktT1']"));
+                                
+                                JavaClick(driver,customerlink);
+
+                                // Clicking on Customer Portal
+                                driver.switchTo().defaultContent();
+                                driver.switchTo().frame("pmenu");
+                                driver.findElement(By.xpath("//a[contains(text(),'Customer portal')]")).click();
+                                
+                /*           driver.switchTo().defaultContent();
+                                driver.switchTo().frame("topmenus");
+                                driver.findElement(By.id("pilT10ID")).click();
+                                
+                                Actions act =new Actions(driver);
+                                act.sendKeys(Keys.DOWN).perform();
+                                Thread.sleep(1000);
+                                act.sendKeys(Keys.RIGHT).perform();
+                                Thread.sleep(1000);
+                                act.sendKeys(Keys.ENTER).perform();
+                                
+                                
+                                Thread.sleep(1000);
+                                driver.switchTo().defaultContent();
+                                driver.switchTo().frame("topmenus");
+                                List<WebElement> link1=driver.findElements(By.xpath("//span[@id='MenuT1ID']/span/a[@id='punktT1']"));
+                                if(link1.size()>0){
+                                WebElement customerlink1=driver.findElement(By.xpath("//span[@id='MenuT1ID']/span/a[@id='punktT1']"));
+
+                                JavaClick(driver,customerlink1);
+                                Thread.sleep(1000);
+                                }
+
+                                // Clicking on Customer Portal
+                                
+                                driver.switchTo().defaultContent();
+                                driver.switchTo().frame("pmenu");
+                                List<WebElement> link2=driver.findElements(By.xpath("//a[contains(text(),'Customer portal')]"));
+                                if(link2.size()>0){
+                                driver.findElement(By.xpath("//a[contains(text(),'Customer portal')]")).click();
+                                }*/
+                                return driver;
+                                
+                                
+                                                
+                                
+                }
+
+                public static String ReadExcel(String SheetName,String Encrpt,int Row,int Column) throws EncryptedDocumentException, InvalidFormatException, IOException{
+FileInputStream fs = new FileInputStream("C:\\Performance\\PerfFiles\\PerformanceCheckPRODMEEBSBooking.xlsx");
+Workbook wb = WorkbookFactory.create(fs);
+Sheet sh = wb.getSheet(SheetName);
+Row r = sh.getRow(Row);
+
+String sValue;
+
+if(Encrpt=="Encrpt"){     
+                sValue = new String(DatatypeConverter.parseBase64Binary(r.getCell(Column).getStringCellValue()));
+}else{
+                sValue = r.getCell(Column).getStringCellValue();
+}
+
+
+return sValue;
+
+}
+
+                public static void ErrorCheck(WebDriver driver,String Reason,String sCPR,String sStartTime,String sEndTime) throws IOException {
+                                if(Reason=="" ||Reason==null ){
+                                                
+                                                System.out.println("Failure reason Unknown");
+                                                //SendingDataToSchema(sCPR,CurrentDateFormat(),"Booking Failed","Failure reason Unknown");
+                                                
+                                                boolean sStatus =errorpopup(driver,sCPR,sStartTime,sEndTime);                                                            
+                                                if(sStatus==false){                                                           
+                                                                SendingDataToSchema(sCPR,sStartTime,sEndTime,"0","Booking Failed","Failure reason Unknown");
+                                                                WriteNotepad("C:\\Performance\\Resultlog2.txt","Failure reason Unknown");
+                                                                
+                                                                }              
+                                                
+                                }else{
+                                                
+                                                if(Reason=="Customer meetings, cases, comments and messages Block - Failed to load"){                                                                
+                                                                SendingDataToSchema(sCPR,sStartTime,sEndTime,"0","Booking Failed","Customer meetings, cases, comments and messages Block - Failed to load");
+                                                                WriteNotepad("C:\\Performance\\Resultlog2.txt","Customer meetings, cases, comments and messages Block - Failed to load");                                             
+                                                }
+                                                
+                                                if(Reason=="Book meeting 1/2 page - Failed to load"){
+                                                                
+                                                                boolean sStatus =errorpopup(driver,sCPR,sStartTime,sEndTime);                                                            
+                                                                if(sStatus==false){                                                           
+                                                                                SendingDataToSchema(sCPR,sStartTime,sEndTime,"0","Booking Failed","Book meeting 1/2 page - Failed to load");
+                                                                                WriteNotepad("C:\\Performance\\Resultlog2.txt","Book meeting 1/2 page - Failed to load");
+                                                                                }              
+                                                }
+                                                
+                                                if(Reason=="Book meeting 2/2 page - Failed to load"){
+                                                                
+                                                                boolean sStatus =errorpopup(driver,sCPR,sStartTime,sEndTime);                                                            
+                                                                if(sStatus==false){                                                           
+                                                                                SendingDataToSchema(sCPR,sStartTime,sEndTime,"0","Booking Failed","Book meeting 2/2 page - Failed to load");
+                                                                                WriteNotepad("C:\\Performance\\Resultlog2.txt","Book meeting 2/2 page - Failed to load");
+                                                                                }              
+                                                }
+                                                
+                                                
+                                                
+                                                
+                                                if(Reason=="Meeting Booking Confirmation page -Failed to load"){
+                                                                
+                                                                boolean sStatus =errorpopup(driver,sCPR,sStartTime,sEndTime);                                                            
+                                                                if(sStatus==false){                                                           
+                                                                                SendingDataToSchema(sCPR,sStartTime,sEndTime,"0","Booking Failed","Meeting Booking Confirmation page -Failed to load");
+                                                                                WriteNotepad("C:\\Performance\\Resultlog2.txt","Meeting Booking Confirmation page -Failed to load");
+                                                                                }              
+                                                }
+                                
+                                }
+                                
+                                
+                                
+                                
+                                try {
+                                                Capturesnap(driver,CurrentDate());
+                                } catch (IOException e) {
+                                                // TODO Auto-generated catch block
+                                                e.printStackTrace();
+                                }
+                                
+                                Runtime.getRuntime().exec("cmd /c C:\\Performance\\PerfFiles\\Testsend.vbs");
+                                
+                                
+                }
+                
+                public static String CurrentDate() {
+                  Date datePerf = new Date();
+                                System.out.println("datePerf:"+datePerf);
+                                
+                                DateFormat DatePerfSimp = new SimpleDateFormat("dd-MMM-yyyy h-mm-ss a");
+                                System.out.println("DatePerfSimp:"+DatePerfSimp);
+                       String stringDatePerf = DatePerfSimp.format(datePerf);
+                                return stringDatePerf;
+                       
+                }     
+
+                public static String CurrentDateFormat() {
+                                  Date datePerf = new Date();
+                                                System.out.println("datePerf:"+datePerf);
+                                                
+                                                DateFormat DatePerfSimp = new SimpleDateFormat("dd-MMM-yyyy h:mm:ss a ");
+                                                System.out.println("DatePerfSimp:"+DatePerfSimp);
+                                       String stringDatePerf = DatePerfSimp.format(datePerf);
+                                                return stringDatePerf+"IST";
+                                       
+                                }  
+                
+                public static void JavaSendkeys(WebDriver driver,WebElement wb,String sVal ){
+                                
+                                JavascriptExecutor jse = (JavascriptExecutor)driver;
+                                jse.executeScript("arguments[0].value='"+sVal+"';", wb);
+                }
+                
+                public static void JavaClick(WebDriver driver,WebElement wb){
+                                
+                                JavascriptExecutor jse = (JavascriptExecutor)driver;
+                                jse.executeScript("arguments[0].click();", wb);
+                }
+
+                public static boolean errorpopup(WebDriver driver,String sCPR,String sStartTime,String sEndTime) throws IOException{
+                                
+                                driver.switchTo().defaultContent();
+                               driver.switchTo().frame("appcontent");
+                               
+                                List<WebElement> error1 = driver.findElements(By.xpath("//span[contains(text(),'Your request has timed out. Be aware that the operation might have finished any-way.')]"));         
+                                List<WebElement> error2 = driver.findElements(By.xpath("//span[contains(text(),'A technical error has occurred. Please retry.')]"));
+                                if(error1.size()>0){          
+                                                System.out.println("Error:Your request has timed out. Be aware that the operation might have finished any-way");
+                                                SendingDataToSchema(sCPR,sStartTime,sEndTime,"0","Booking Failed","Error:Your request has timed out. Be aware that the operation might have finished any-way");
+                                                WriteNotepad("C:\\Performance\\Resultlog2.txt","Error:Your request has timed out. Be aware that the operation might have finished any-way");
+                                                return true;
+                                }                                              
+                                else if(error2.size()>0){ 
+                                                System.out.println("Error:A technical error has occurred. Please retry.");
+                                                SendingDataToSchema(sCPR,sStartTime,sEndTime,"0","Booking Failed","Error:A technical error has occurred. Please retry.");
+                                                WriteNotepad("C:\\Performance\\Resultlog2.txt","Error:A technical error has occurred. Please retry.");
+                                                return true;
+                                }else{
+                                                return false;
+                                }
+                                
+                }
+
+                public static String CurrentDateTimeFormat() {
+
+                                Date date1 = new Date();
+                                DateFormat sdf1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    String stringDate1 = sdf1.format(date1);
+                    String sEndTime=stringDate1+":"+System.currentTimeMillis();
+
+                    return sEndTime;
+                                       
+                                }  
+                
+                public static void WriteNotepad(String sFileName,String sData) throws IOException{
+                                
+                                //String TestFile = "C:\\Performance\\Resultlog.txt";
+        File FC = new File(sFileName);//Created object of java File class.
+        FC.createNewFile();//Create file.
+        
+        //Writing In to file.
+        //Create Object of java FileWriter and BufferedWriter class.
+        FileWriter FW = new FileWriter(sFileName);
+       BufferedWriter BW = new BufferedWriter(FW);
+
+       BW.write(sData);
+       BW.close(); 
+                
+}
+
+                public static void SetBranch(WebDriver driver) throws IOException, InterruptedException{
+                                
+                                driver.switchTo().defaultContent();
+                                driver.switchTo().frame("topmenus");
+                                
+                                WebDriverWait wait = new WebDriverWait(driver,20);
+                                wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//a[@class='profile-link']/img[@src='http://portal.danskenet.net/online/grafik/2016/DB_settings-icon.jpg']")));
+
+                                WebElement SettingLink=driver.findElement(By.xpath("//a[@class='profile-link']/img[@src='http://portal.danskenet.net/online/grafik/2016/DB_settings-icon.jpg']"));                                                                                                                                                                                                                                                                                                                                                                                                        
+                                JavascriptExecutor js1 = (JavascriptExecutor) driver;
+                                js1.executeScript("arguments[0].click();", SettingLink);
+
+                                driver.switchTo().defaultContent();
+                                driver.switchTo().frame("appcontent");
+                                driver.switchTo().frame("notesprofil");
+                                List<WebElement> list = driver.findElements(By.xpath("//input[@value='Choose as default portal']"));
+                                if (list.size() > 0) {
+                                                // Changing Branch
+                                                driver.switchTo().defaultContent();
+                                                driver.switchTo().frame("appcontent");
+                                                driver.switchTo().frame("hostprofil");
+                                                WebElement sBranch=driver.findElement(By.name("anst")); 
+                                                JavaClick(driver,sBranch);
+                                                JavaSendkeys(driver,sBranch,"4420");
+
+                                                // Selecting Language
+                                                WebElement mySelectElement1 = driver.findElement(By.name("spkd"));
+                                                Select lang = new Select(mySelectElement1);
+                                                lang.selectByValue("EN");// EN
+
+                                                // Selecting Printer
+                                                driver.findElement(By.name("printer")).clear();
+                                                driver.findElement(By.name("printer")).click();
+                                                Thread.sleep(1000);
+                                                WebElement sPrinter=driver.findElement(By.name("printer"));
+                                                
+                                                JavaClick(driver,sPrinter);
+                                                JavaSendkeys(driver,sPrinter,"DBNBCU");
+
+                                                // Clicking on OK Button
+                                                driver.findElement(By.xpath("//input[@class='gsKnap65']")).click();
+                                
+                                
+                }
+                                
+                }
+                
+                
+                
+}
+
+
